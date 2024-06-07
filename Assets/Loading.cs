@@ -65,8 +65,20 @@ public class Loading : MonoBehaviour
 
     private void OnButtonDeleteClick()
     {
-        string key = "lv" + _levelLoad.ToString();
+        // string key = "lv" + _levelLoad.ToString();
+        // Addressables.ClearDependencyCacheAsync(key);
+        StartCoroutine("DeleteData");
+    }
 
+    private IEnumerator DeleteData()
+    {
+        if (downloadHandler.IsValid())
+        {
+            Addressables.Release(downloadHandler); // Release the handle
+            downloadHandler = default(AsyncOperationHandle);
+            yield return null;
+        }
+        string key = "lv" + _levelLoad.ToString();
         Addressables.ClearDependencyCacheAsync(key);
     }
 
@@ -75,20 +87,17 @@ public class Loading : MonoBehaviour
         btnDownload.gameObject.SetActive(true);
         btnCancel.gameObject.SetActive(false);
 
-        this.gameObject.SetActive(false);
+        //this.gameObject.SetActive(false);
         //StopAllCoroutines();
 
         if (downloadCoroutine != null)
         {
+            Debug.Log("Stop Courotine Download");
             StopCoroutine(downloadCoroutine);
         }
 
         // Huỷ tải về
-        if (downloadHandler.IsValid())
-        {
-            Addressables.Release(downloadHandler); // Release the handle
-            downloadHandler = default(AsyncOperationHandle);
-        }
+        StartCoroutine("DeleteData");
     }
 
     private IEnumerator LoadGamePlay()
