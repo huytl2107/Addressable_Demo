@@ -40,7 +40,7 @@ public class Loading : MonoBehaviour
     private void OnEnable()
     {
         btnDownload.onClick.AddListener(OnButtonDownloadClick);
-        btnCancel.onClick.AddListener(OnButtonCancel);
+        btnCancel.onClick.AddListener(OnButtonAbortClick);
         btnDelete.onClick.AddListener(OnButtonDeleteClick);
     }
 
@@ -59,10 +59,11 @@ public class Loading : MonoBehaviour
         btnCancel.gameObject.SetActive(true);
         btnDownload.gameObject.SetActive(false);
         _loadingSlider.gameObject.SetActive(true);
+
         downloadCoroutine = StartCoroutine("LoadGamePlay");
     }
 
-    private void OnButtonAbortClick()
+        private void OnButtonAbortClick()
     {
         btnDownload.gameObject.SetActive(true);
         btnCancel.gameObject.SetActive(false);
@@ -75,7 +76,7 @@ public class Loading : MonoBehaviour
             StopCoroutine(downloadCoroutine);
         }
 
-        // Huỷ tải về nếu đang có
+        // Huỷ tải về
         if (downloadHandler.IsValid())
         {
             Addressables.Release(downloadHandler); // Release the handle
@@ -96,7 +97,7 @@ public class Loading : MonoBehaviour
         {
             //AsyncOperationHandle downloadDependencies = Addressables.DownloadDependenciesAsync(key);
             downloadHandler = Addressables.DownloadDependenciesAsync(key);
-            while (!downloadHandler.IsDone)
+            while (!downloadHandler.IsDone && downloadHandler.IsValid())
             {
                 _loadingSlider.value = downloadHandler.PercentComplete;
                 yield return null;
