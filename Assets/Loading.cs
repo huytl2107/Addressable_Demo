@@ -63,7 +63,14 @@ public class Loading : MonoBehaviour
         downloadCoroutine = StartCoroutine("LoadGamePlay");
     }
 
-        private void OnButtonAbortClick()
+    private void OnButtonDeleteClick()
+    {
+        string key = "lv" + _levelLoad.ToString();
+
+        Addressables.ClearDependencyCacheAsync(key);
+    }
+
+    private void OnButtonAbortClick()
     {
         btnDownload.gameObject.SetActive(true);
         btnCancel.gameObject.SetActive(false);
@@ -105,12 +112,5 @@ public class Loading : MonoBehaviour
             yield return downloadHandler;
         }
         SceneManager.LoadSceneAsync(_levelLoad, LoadSceneMode.Single);
-    }
-
-    private void OnButtonDeleteClick()
-    {
-        string key = "lv" + _levelLoad.ToString();
-
-        Addressables.ClearDependencyCacheAsync(key);
     }
 }
