@@ -72,13 +72,15 @@ public class Loading : MonoBehaviour
 
     private IEnumerator DeleteData()
     {
+        string key = "lv" + _levelLoad.ToString();
+
         if (downloadHandler.IsValid())
         {
+            Addressables.Release(key);
             Addressables.Release(downloadHandler); // Release the handle
             downloadHandler = default(AsyncOperationHandle);
             yield return null;
         }
-        string key = "lv" + _levelLoad.ToString();
         Addressables.ClearDependencyCacheAsync(key);
     }
 
