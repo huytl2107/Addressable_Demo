@@ -10,6 +10,7 @@ using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using UnityEngine.AddressableAssets.ResourceLocators;
 
 public class Loading : MonoBehaviour
 {
@@ -63,7 +64,7 @@ public class Loading : MonoBehaviour
         btnDownload.gameObject.SetActive(false);
         _loadingSlider.gameObject.SetActive(true);
 
-        downloadCoroutine = StartCoroutine("LoadGamePlay");
+        downloadCoroutine = StartCoroutine("UpdateCatalogs");
     }
 
     private void OnButtonDeleteClick()
@@ -122,36 +123,28 @@ public class Loading : MonoBehaviour
                 _loadingSlider.value = downloadHandler.PercentComplete;
                 yield return null;
             }
-            
-            AsyncOperationHandle<List<string>> checkForUpdateHandle = Addressables.CheckForCatalogUpdates(false);
-            yield return checkForUpdateHandle;
-
-            // Kiểm tra xem có cập nhật nào không
-            if (checkForUpdateHandle.Status == AsyncOperationStatus.Succeeded)
-            {
-                List<string> catalogs = checkForUpdateHandle.Result;
-                foreach (string catalog in catalogs)
-                {
-                    if (catalog.Contains(key))
-                    {
-                        // Có cập nhật, thực hiện tải lại
-                        Debug.Log("There is an update for " + key);
-
-                        // Tiến hành tải lại
-                        downloadHandler = Addressables.DownloadDependenciesAsync(key);
-                        while (!downloadHandler.IsDone && downloadHandler.IsValid())
-                        {
-                            _loadingSlider.value = downloadHandler.PercentComplete;
-                            yield return null;
-                        }
-                        yield return downloadHandler;
-
-                        break; // Thoát vòng lặp, không cần kiểm tra các catalog khác nữa
-                    }
-                }
-            }
             yield return downloadHandler;
         }
+        SceneManager.LoadSceneAsync(_levelLoad, LoadSceneMode.Single);
+    }
+
+    IEnumerator UpdateCatalogs()
+    {
+        List<string> catalogsToUpdate = new List<string>();
+        AsyncOperationHandle<List<string>> checkForUpdateHandle = Addressables.CheckForCatalogUpdates();
+        checkForUpdateHandle.Completed += op =>
+        {
+            catalogsToUpdate.AddRange(op.Result);
+        };
+        yield return checkForUpdateHandle;
+        if (catalogsToUpdate.Count > 0)
+        {
+            Debug.Log("Phat hien " + catalogsToUpdate.Count + " update");
+            AsyncOperationHandle<List<IResourceLocator>> updateHandle = Addressables.UpdateCatalogs(catalogsToUpdate);
+            yield return updateHandle;
+        }
+        else
+            Debug.Log("Khong co update");
         SceneManager.LoadSceneAsync(_levelLoad, LoadSceneMode.Single);
     }
 
@@ -159,28 +152,24 @@ public class Loading : MonoBehaviour
     // {
     //     string key = "lv" + _levelLoad.ToString();
 
-    //     // Kiểm tra xem phụ thuộc đã được tải xuống chưa
-    //     AsyncOperationHandle<long> downloadSizeHandle = Addressables.GetDownloadSizeAsync(key);
-    //     yield return downloadSizeHandle;
+    //     AsyncOperationHandle<long> getDownloadSize = Addressables.GetDownloadSizeAsync(key);
+    //     yield return getDownloadSize;
 
-    //     long downloadSize = downloadSizeHandle.Result;
-
-    //     if (downloadSize > 0)
+    //     //If the download size is greater than 0, download all the dependencies.
+    //     if (getDownloadSize.Result > 0)
     //     {
-    //         if (downloadSize > 0 && !Addressables.GetDownloadSizeAsync(key).IsValid())
+    //         downloadHandler = Addressables.DownloadDependenciesAsync(key);
+    //         while (!downloadHandler.IsDone && downloadHandler.IsValid())
     //         {
-    //             downloadHandler = Addressables.DownloadDependenciesAsync(key);
-    //             while (!downloadHandler.IsDone && downloadHandler.IsValid())
-    //             {
-    //                 _loadingSlider.value = downloadHandler.PercentComplete;
-    //                 yield return null;
-    //             }
-    //             yield return downloadHandler;
+    //             _loadingSlider.value = downloadHandler.PercentComplete;
+    //             yield return null;
     //         }
+    //         yield return downloadHandler;
 
     //         AsyncOperationHandle<List<string>> checkForUpdateHandle = Addressables.CheckForCatalogUpdates(false);
     //         yield return checkForUpdateHandle;
 
+    //         // Kiểm tra xem có cập nhật nào không
     //         if (checkForUpdateHandle.Status == AsyncOperationStatus.Succeeded)
     //         {
     //             List<string> catalogs = checkForUpdateHandle.Result;
@@ -188,6 +177,7 @@ public class Loading : MonoBehaviour
     //             {
     //                 if (catalog.Contains(key))
     //                 {
+    //                     // Có cập nhật, thực hiện tải lại
     //                     Debug.Log("There is an update for " + key);
 
     //                     // Tiến hành tải lại
@@ -199,17 +189,18 @@ public class Loading : MonoBehaviour
     //                     }
     //                     yield return downloadHandler;
 
-    //                     break;
+    //                     break; // Thoát vòng lặp, không cần kiểm tra các catalog khác nữa
+    //                 }
+    //                 else
+    //                 {
+    //                     Debug.Log(key + "not have update");
     //                 }
     //             }
     //         }
-
-    //         Addressables.Release(checkForUpdateHandle);
+    //         yield return downloadHandler;
     //     }
 
-    //     // Sau khi kiểm tra cập nhật hoặc không cần cập nhật, load scene
     //     SceneManager.LoadSceneAsync(_levelLoad, LoadSceneMode.Single);
     // }
-
 
 }
